@@ -25,10 +25,11 @@ offsetDown       = 100 * magnification
 overlay = 1 
 
 # Exposure time
-exposureTime = 100 
+exposureTime  = [1,10,20,50,100,200,500,1000,2000,5000,10000]
+exposureLevel = 1 
 
 # Correct for vignetting?
-gainFlag = False 
+gainFlag = True 
 
 # Correct optical axis?
 opticalAxisOffset = False
@@ -36,15 +37,15 @@ opticalAxisOffset = False
 capture = cv2.VideoCapture(0)
 capture.set(cv2.CAP_PROP_FRAME_WIDTH, WIDTH)
 capture.set(cv2.CAP_PROP_FRAME_HEIGHT, HEIGHT)
-capture.set(cv2.CAP_PROP_FPS,1.0)
+capture.set(cv2.CAP_PROP_FPS,1)
 capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 os.system('v4l2-ctl -d /dev/video0 -c auto_exposure=1')                  # 0:auto 1:manual
-os.system('v4l2-ctl -d /dev/video0 -c exposure_time_absolute=' + str(exposureTime))     # 1to10000
+os.system('v4l2-ctl -d /dev/video0 -c exposure_time_absolute=' + str(exposureTime[exposureLevel]))     # 1to10000
 os.system('v4l2-ctl -d /dev/video0 -c exposure_metering_mode=0')
 
 # If you need to set more conditions, you may use the following commdands.
 #os.system('v4l2-ctl -d /dev/video0 -c exposure_dynamic_framerate=1')
-#os.system('v4l2-ctl -d /dev/video0 -c iso_sensitivity_auto=0')          # 0:manual 1:auto
+os.system('v4l2-ctl -d /dev/video0 -c iso_sensitivity_auto=0')          # 0:manual 1:auto
 #os.system('v4l2-ctl -d /dev/video0 -c iso_sensitivity=0')               # 0,1,2,3,4
 #os.system('v4l2-ctl -d /dev/video0 -c auto_exposure_bias=0')            #-24 to 24
 #os.system('v4l2-ctl -d /dev/video0 -c scene_mode=8')
@@ -71,7 +72,6 @@ def takePicture():
     global overlay, gainFlag, opticalAxisOffset, offsetRight, offsetDown, pictureNum
 
     for i in range(overlay):
-        print("number of shot = ",i)
         ret, frame = capture.read()
         ret, frame = capture.read()
         if ret is False:
@@ -104,7 +104,7 @@ def takePicture():
 #        frame = frame**(1/2.2)
 
     now = timeNow()
-    cv2.imwrite(now + ".jpg", frameO)
+    cv2.imwrite("data/" + now + ".jpg", frameO)
     print("push [s] to take pic / [q] to quit")
 
     if capture.isOpened() is False:
@@ -120,7 +120,17 @@ while True:
     elif key == "s":
         print("shutter!")
         takePicture()
-    
+    elif key == "i":
+        if exposureLevel < len(exposureTime)-1:
+            exposureLevel += 1
+            print("exposure time = ", exposureTime[exposureLevel])
+            os.system('v4l2-ctl -d /dev/video0 -c exposure_time_absolute=' + str(exposureTime[exposureLevel]))     # 1to10000
+
+    elif key == "k":
+        if exposureLevel > 0:
+            exposureLevel -= 1
+            print("exposure time = ", exposureTime[exposureLevel])
+            os.system('v4l2-ctl -d /dev/video0 -c exposure_time_absolute=' + str(exposureTime[exposureLevel]))     # 1to10000
 
 capture.release()
 
